@@ -39,15 +39,25 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public Optional<ProductVo> getProductById(Integer id) {
-		Optional<ProductEntity> productEntityOptional = this.productRepository.findById(id);
-		return productEntityOptional.map(value -> this.mapperUtil.mapperObject(value, ProductVo.class));
+	public ProductVo getProductById(Integer id) {
+		ProductEntity productEntity = this.productRepository.findById(id)
+				.orElseThrow(() -> new IllegalArgumentException("Id no existe"));
+		return this.mapperUtil.mapperObject(productEntity, ProductVo.class);
 	}
 
 	@Override
 	public ProductVo updateProduct(ProductVo productVo, Integer id) {
-		// TODO Auto-generated method stub
-		return null;
+		ProductVo SavedproducVo = this.getProductById(id);
+		SavedproducVo.setId(id);
+		SavedproducVo.setName(productVo.getName());
+		SavedproducVo.setPrice(productVo.getPrice());
+		SavedproducVo.setQuantity(productVo.getQuantity());
+		SavedproducVo.setSalePrice(productVo.getSalePrice());
+		SavedproducVo.setDescription(productVo.getDescription());
+
+		ProductEntity productEntity = this.mapperUtil.mapperObject(SavedproducVo, ProductEntity.class);
+		ProductEntity prodEntity = this.productRepository.save(productEntity);
+		return this.mapperUtil.mapperObject(prodEntity, ProductVo.class);
 	}
 
 	@Override
@@ -73,9 +83,8 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public void delete(Integer id) {
-		// TODO Auto-generated method stub
-
+	public void deleteProduct(Integer id) {
+		this.productRepository.deleteById(id);
 	}
 
 }

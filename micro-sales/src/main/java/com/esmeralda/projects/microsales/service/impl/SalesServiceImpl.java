@@ -1,7 +1,9 @@
 package com.esmeralda.projects.microsales.service.impl;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ public class SalesServiceImpl implements SalesService {
 
 	private SalesRepository salesRepository;
 	private MapperUtil mapperUtil;
+	private String hostUrlProductById = "http://localhost:8080/product/{id}";
 
 	private RestTemplate restTemplate;
 
@@ -44,11 +47,29 @@ public class SalesServiceImpl implements SalesService {
 		 * 5.despues que se crea la venta llamar al micro de productos y actualizar la
 		 * cantidad de productos
 		 */
-		Map<String, Integer> urlVariable = new HashMap<>();
-		urlVariable.put("id", salesVo.getIdProduct());
+		ProductVo productVo = getProductById(salesVo);
 
-		ResponseEntity<ProductVo> response = this.restTemplate.getForEntity("http://localhost:8080/product/{id}",
-				ProductVo.class, urlVariable);
+		SalesEntity salesEntity = this.mapperUtil.mapperObject(salesVo, SalesEntity.class);
+		salesEntity.setTotal(productVo.getSalePrice() * salesVo.getQuality());
+
+		SalesEntity SaveSale = this.salesRepository.save(salesEntity);
+
+		updateProductById(salesVo, productVo);
+
+		return this.mapperUtil.mapperObject(SaveSale, SalesVo.class);
+
+	}
+
+	private void updateProductById(SalesVo salesVo, ProductVo productVo) {
+		Integer quantity = productVo.getQuantity() - salesVo.getQuality();
+		productVo.setQuantity(quantity);
+		this.restTemplate.put(hostUrlProductById, productVo, this.getUrlVariable(salesVo.getIdProduct()));
+	}
+
+	private ProductVo getProductById(SalesVo salesVo) {
+
+		ResponseEntity<ProductVo> response = this.restTemplate.getForEntity(hostUrlProductById, ProductVo.class,
+				this.getUrlVariable(salesVo.getIdProduct()));
 
 		ProductVo productVo = response.getBody();
 
@@ -59,15 +80,46 @@ public class SalesServiceImpl implements SalesService {
 		if (productVo.getQuantity() < salesVo.getQuality()) {
 			throw new IllegalArgumentException("La cantidad solicitada supera el inventario");
 		}
+		return productVo;
+	}
 
-		SalesEntity salesEntity = this.mapperUtil.mapperObject(salesVo, SalesEntity.class);
-		salesEntity.setTotal(productVo.getSalePrice() * salesVo.getQuality());
+	private Map<String, Integer> getUrlVariable(Integer id) {
+		Map<String, Integer> urlVariable = new HashMap<>();
+		urlVariable.put("id", id);
+		return urlVariable;
+	}
 
-		SalesEntity SaveSale = this.salesRepository.save(salesEntity);
-		
-		
-		// this.restTemplate.pos
-		return this.mapperUtil.mapperObject(SaveSale, SalesVo.class);
+	@Override
+	public List<SalesVo> getAllSale() {
+		return this.salesRepository.findAll().stream().map(value -> this.mapperUtil.mapperObject(value, SalesVo.class))
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public SalesVo getSaleById(Integer id) {
+
+		SalesEntity salesEntity = this.salesRepository.findById(id)
+				.orElseThrow(() -> new IllegalArgumentException("El id no existe"));
+
+		return this.mapperUtil.mapperObject(salesEntity, SalesVo.class);
+
+	}
+
+	@Override
+	public SalesVo updateSale(Integer id, SalesVo salesVo) {
+		SalesVo salVoSaved = this.getSaleById(id);
+		salVoSaved.setId(id);
+		salVoSaved.setIdProduct(salesVo.getIdProduct());
+		salVoSaved.setQuality(salesVo.getQuality());
+
+		SalesEntity salesEntity = this.mapperUtil.mapperObject(salVoSaved, SalesEntity.class);
+		SalesEntity saleSaved = this.salesRepository.save(salesEntity);
+		return this.mapperUtil.mapperObject(saleSaved, SalesVo.class);
+	}
+
+	@Override
+	public void deleteSale(Integer id) {
+		this.salesRepository.deleteById(id);
 
 	}
 

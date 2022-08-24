@@ -1,7 +1,6 @@
 package com.rah.demo.microproduct.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import com.rah.demo.microproduct.model.ProductVo;
 
@@ -15,8 +14,8 @@ public interface ProductService {
 
 	public ProductVo updateQuality(Integer quantity, Integer id);
 
-	public void delete(Integer id);
+	public void deleteProduct(Integer id);
 
-	public Optional<ProductVo> getProductById(Integer id);
+	public ProductVo getProductById(Integer id);
 
 }
