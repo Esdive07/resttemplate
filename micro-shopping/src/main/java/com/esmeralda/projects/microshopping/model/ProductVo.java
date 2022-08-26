@@ -1,13 +1,13 @@
 package com.esmeralda.projects.microshopping.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class ProductVo {
+@EqualsAndHashCode(callSuper = false)
+public class ProductVo extends AtributoVo {
 	private Integer id;
 	private String name;
 	private String description;
-	private double price;
 	private Integer quantity;
-	private double salePrice;
 }

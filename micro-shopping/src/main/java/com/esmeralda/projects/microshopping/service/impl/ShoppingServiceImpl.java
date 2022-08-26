@@ -30,13 +30,12 @@ public class ShoppingServiceImpl implements ShoppingService {
 		this.restTemplate = new RestTemplate();
 	}
 
-	/**
-	 * 1.si el producto existe se actualiza la cantidad y precios
-	 * 
-	 */
-
 	@Override
 	public ShoppingVo createShopping(ShoppingVo shoppingVo) {
+
+		if (shoppingVo.getQuantity() <= 0) {
+			throw new IllegalArgumentException("La cantidad debe ser mayor a cero");
+		}
 
 		ProductVo productVo = getproductId(shoppingVo);
 
@@ -63,16 +62,14 @@ public class ShoppingServiceImpl implements ShoppingService {
 			throw new IllegalArgumentException("debe crear primero el producto");
 		}
 
-		if (shoppingVo.getQuantity() <= 0) {
-			throw new IllegalArgumentException("La cantidad debe ser mayor a cero");
-		}
 		return productVo;
 	}
 
 	public void updateProductByid(ProductVo productVo, ShoppingVo shoppingVo) {
 		Integer quantity = productVo.getQuantity() + shoppingVo.getQuantity();
 		productVo.setQuantity(quantity);
-
+		productVo.setPrice(shoppingVo.getPrice());
+		productVo.setSalePrice(shoppingVo.getSalePrice());
 		this.restTemplate.put("http://localhost:8080/product/{id}", productVo,
 				this.getUrlVariable(shoppingVo.getIdproduct()));
 	}
